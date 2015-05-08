@@ -1,4 +1,4 @@
-var cols = 2;
+var cols = 6;
 var perSideSize = 50;
 var totalSize = cols*perSideSize;
 var lineStrokeWidth = 4;
@@ -40,7 +40,7 @@ function drawLines()
 			var horizontal_endPointX = (j*perSideSize) + WidthAdjuster;
 			var horizontal_endPointY = ((i-1)*perSideSize) + WidthAdjuster;
 
-			var H_id = (i)+':'+(j)+'-'+(j+1)+':'+(i);
+			var H_id = (j)+':'+(i)+'-'+(j+1)+':'+(i);
 
 			var H_line = draw
 							.line(horizontal_startPointX, horizontal_startPointY, horizontal_endPointX, horizontal_endPointY)
@@ -71,14 +71,14 @@ function drawRechangularContainers()
 {
 	//Draw the rectangle
 	var boxWidthFactor = WidthAdjuster + (lineStrokeWidth/2);
-	for(var i = 0; i < cols; i++)
+	for(var i = 1; i <= cols; i++)
 	{
-		for(var j = 0; j < cols; j++)
+		for(var j = 1; j <= cols; j++)
 		{
-			var topLeft = [(i*perSideSize)+boxWidthFactor, (j*perSideSize)+boxWidthFactor];
-			var topRight = [((i+1)*perSideSize),(j*perSideSize)+boxWidthFactor];
-			var bottomRight = [((i+1)*perSideSize),((j+1)*perSideSize)];
-			var bottomLeft = [(i*perSideSize)+boxWidthFactor,((j+1)*perSideSize)];
+			var topLeft = [((i-1)*perSideSize)+boxWidthFactor, ((j-1)*perSideSize)+boxWidthFactor];
+			var topRight = [((i)*perSideSize),((j-1)*perSideSize)+boxWidthFactor];
+			var bottomRight = [((i)*perSideSize),((j)*perSideSize)];
+			var bottomLeft = [((i-1)*perSideSize)+boxWidthFactor,((j)*perSideSize)];
 
 			var polygonPosition = [topLeft,topRight,bottomRight,bottomLeft];
 			//console.log(polygonPosition);	
@@ -96,6 +96,9 @@ function drawRechangularContainers()
 
 function markLine(element, orientation)
 {
+	if(SVG.get(element.id).hasClass('owned'))
+		return false;
+
 	//The color need to be identified by the player who is currently playing
 	var playerDetails = getPlayerDetails(currentPlayer);
 	SVG.get(element.id)
@@ -159,38 +162,65 @@ function getPlayerDetails(playerId)
 
 function checkIfOwned(element, orientation)
 {
+	var ownedStatus = false;
+	var currentUnderCheckingLine = (element.id).slice(2).split('-');
+
+	//since	it is a horizontal line
+	var actualPoints = [];
+	for(var i in currentUnderCheckingLine)	
+	   actualPoints.push(currentUnderCheckingLine[i].split(':'));
+
+	console.log(actualPoints);
+
 	if(orientation == 'H')
 	{
-		var currentUnderCheckingLine = (element.id).slice(2).split('-');
-
-		//since it is a horizontal line
-		var actualPoints = [];
-		for(var i in currentUnderCheckingLine)	
-		   actualPoints.push(currentUnderCheckingLine[i].split(':'));
-
-		console.log(actualPoints);
-
 		//Need a better implementation
 
-		//traversing counter clockwise
-
-		var clk_firstLine = 'H_'+actualPoints[0][0]+'-'+actualPoints[0][1]+':'+actualPoints[1][0]+'-'+actualPoints[1][1];
-		var clk_secondLine = 'V_'+actualPoints[1][0]+'-'+actualPoints[1][1]+':'+actualPoints[1][0]+'-'+ (parseInt(actualPoints[1][1])-1);
-		var clk_thirdLine = 'H_'+actualPoints[1][0]+'-'+ (parseInt(actualPoints[1][1])-1)+':'+(parseInt(actualPoints[1][0]) - 1)+'-'+(parseInt(actualPoints[1][1])-1);	
-		var clk_fourthLine = 'V_'+(parseInt(actualPoints[1][0]) - 1)+'-'+(parseInt(actualPoints[1][1])-1)+'::'+actualPoints[0][0]+'-'+actualPoints[0][1];
-
-		if(SVG.get(clk_firstLine).hasClass('owned') && SVG.get(clk_secondLine).hasClass('owned') && SVG.get(clk_thirdLine).hasClass('owned') && SVG.get(clk_fourthLine).hasClass('owned') )
+		//traversing counter anti clockwise
+		if(actualPoints[0][1] > 1)	//which means it is the first row no anti clockwise is needed
 		{
-			markOwned('123', currentPlayer);
-			alert();
+			var owned = traverseAntiClockWise_H(parseInt(actualPoints[0][0]), parseInt(actualPoints[0][1]), parseInt(actualPoints[1][0]), parseInt(actualPoints[1][1]))
+			if(owned)
+			{
+				markOwned(owned, currentPlayer);
+				ownedStatus = true;
+			}
+		}
+		if(actualPoints[1][1] <= cols)	//which means it is the last row no clockwise is needed
+		{
+			var owned = traverseClockWise_H(parseInt(actualPoints[0][0]), parseInt(actualPoints[0][1]), parseInt(actualPoints[1][0]),parseInt( actualPoints[1][1]))
+			if(owned)
+			{
+				markOwned(owned, currentPlayer);
+				ownedStatus = true;		
+			}
+		}	
+	}
+	if(orientation == 'V')
+	{
+		if(actualPoints[1][0] > 1)	//which means it is the first row no anti clockwise is needed
+		{
+			var owned = traverseAntiClockWise_V(parseInt(actualPoints[0][0]), parseInt(actualPoints[0][1]), parseInt(actualPoints[1][0]),parseInt( actualPoints[1][1]))
+			if(owned)
+			{
+				markOwned(owned, currentPlayer);
+				ownedStatus = true;		
+			}
 		}
 
-
-		
+		if(actualPoints[0][0] <= cols)	//which means it is the first row no anti clockwise is needed
+		{
+			var owned = traverseClockWise_V(parseInt(actualPoints[0][0]), parseInt(actualPoints[0][1]), parseInt(actualPoints[1][0]),parseInt( actualPoints[1][1]))
+			if(owned)
+			{
+				markOwned(owned, currentPlayer);
+				ownedStatus = true;		
+			}
+		}
 	}
 
 
-	return false;
+	return ownedStatus;
 }
 
 function markOwned(rectangleId, ownedPlayer)
@@ -201,10 +231,93 @@ function markOwned(rectangleId, ownedPlayer)
 }
 
 
-function traverseClockWise(actualPoints)
+function traverseAntiClockWise_H(x1, y1, x2, y2)
 {
-	for(i in actualPoints)
-	{
+	var L1 = 'H_'+(x1)+':'+(y1)+'-'+(x2)+':'+(y2);
+	var L2 = 'V_'+(x1+1)+':'+(y1-1)+'-'+(x2)+':'+(y2);	
+	var L3 = 'H_'+(x1)+':'+(y1-1)+'-'+(x2)+':'+(y2-1);	
+	var L4 = 'V_'+(x1)+':'+(y1-1)+'-'+(x2-1)+':'+(y2);
 
+	//The sides would be L3-L2-L1-L4
+	var R = 'P_'+(x1)+':'+(y1-1)+'-'+(x2)+':'+(y2-1)+'-'+(x2)+':'+(y2)+'-'+(x1)+':'+(y1); //Find the rectangle id
+	if(checkIfLinesMarked(L1, L2, L3, L4))
+		return R;
+	else
+		return false;
+}
+
+
+
+function traverseClockWise_H(x1, y1, x2, y2)
+{
+	var L1 = 'H_'+(x1)+':'+(y1)+'-'+(x2)+':'+(y2);
+	var L2 = 'V_'+(x1+1)+':'+(y1)+'-'+(x2)+':'+(y2+1);
+	var L3 = 'H_'+(x1)+':'+(y1+1)+'-'+(x2)+':'+(y2+1);
+	var L4 = 'V_'+(x1)+':'+(y1)+'-'+(x2-1)+':'+(y2+1);
+
+	//The sides would beL1-L2-L3-L4
+	var R = 'P_'+(x1)+':'+(y1)+'-'+(x2)+':'+(y2)+'-'+(x2)+':'+(y2+1)+'-'+(x1)+':'+(y1+1); //Find the rectangle id
+	if(checkIfLinesMarked(L1, L2, L3, L4))
+		return R;
+	else
+		return false;
+}
+
+
+
+function traverseClockWise_V(x1, y1, x2, y2)
+{
+	var L1 = 'V_'+(x1)+':'+(y1)+'-'+(x2)+':'+(y2);
+	var L2 = 'H_'+(x1)+':'+(y1)+'-'+(x2+1)+':'+(y2-1);	
+	var L3 = 'V_'+(x1+1)+':'+(y1)+'-'+(x2+1)+':'+(y2);	
+	var L4 = 'H_'+(x1)+':'+(y1+1)+'-'+(x2+1)+':'+(y2);
+
+	//The sides would be L1-L2-L3-L4
+	var R = 'P_'+(x1)+':'+(y1)+'-'+(x1+1)+':'+(y1)+'-'+(x2+1)+':'+(y2)+'-'+(x2)+':'+(y2); //Find the rectangle id
+	console.log(R);
+	if(checkIfLinesMarked(L1, L2, L3, L4))
+		return R;
+	else
+		return false;
+}
+
+
+
+function traverseAntiClockWise_V(x1, y1, x2, y2)
+{
+	var L1 = 'V_'+(x1)+':'+(y1)+'-'+(x2)+':'+(y2);
+	var L2 = 'H_'+(x1-1)+':'+(y1+1)+'-'+(x2)+':'+(y2);	
+	var L3 = 'V_'+(x1-1)+':'+(y1)+'-'+(x2-1)+':'+(y2);	
+	var L4 = 'H_'+(x1-1)+':'+(y1)+'-'+(x2)+':'+(y2-1);
+
+	console.log(L1);
+	console.log(L2);
+	console.log(L3);
+	console.log(L4);
+	//The sides would be L3-L2-L1-L4
+
+	var R = 'P_'+(x1-1)+':'+(y1)+'-'+(x1)+':'+(y1)+'-'+(x2)+':'+(y2)+'-'+(x2-1)+':'+(y2); //Find the rectangle id
+	console.log(R);
+	if(checkIfLinesMarked(L1, L2, L3, L4))
+		return R;
+	else
+		return false;
+}
+
+
+
+function checkIfLinesMarked(L1, L2, L3, L4)
+{
+
+	console.log(L1+'########'+L2+'########'+L3+'########'+L4+'########');
+	try {
+	  if(SVG.get(L1).hasClass('owned') && SVG.get(L2).hasClass('owned') && SVG.get(L3).hasClass('owned') && SVG.get(L4).hasClass('owned') )
+	  	return true;
+	  else
+	  	return false;
+	}
+	catch (ex) {
+	  console.error("outer", ex.message);
+	  return false;
 	}
 }
