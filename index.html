@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script> 
-	<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
-	<script src="svg.js"></script>
-	<script src="script.js"></script>
-	<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootswatch/3.3.4/united/bootstrap.min.css">
+	<script src="assets/js/jquery.min.js"></script> 
+	<script src="assets/js/bootstrap.min.js"></script>
+	<script src="assets/js/svg.js"></script>
+	<script src="assets/js/script.js"></script>
+	<link rel="stylesheet" href="assets/css/bootstrap.min.css">
+	<link rel="stylesheet" href="assets/css/style.css">
 	<title>G4m3</title>
 </head>
 <body>
@@ -23,6 +24,9 @@
 			<div class="col-md-6">
 				<div id='players-container' class='table-responsive'>
 					<table class='responsive'>
+						<tr>
+							<td></td>
+						</tr>	
 					</table>
 				</div>
 			</div>
@@ -42,39 +46,9 @@
 $(document).ready(function() {
 		initializeSVG();
 		drawLines();
-		drawRechangularContainers();
 		initializeUsers();
 	});
 </script>
 
-<style>
-.btn-loading {
-    animation: 0.5s linear 0s normal none infinite btn-loading-animation;
-    background-image: linear-gradient(-45deg, rgba(255, 255, 255, 0.6) 25%, rgba(255, 255, 255, 0.3) 25%, rgba(255, 255, 255, 0.3) 50%, rgba(255, 255, 255, 0.6) 50%, rgba(255, 255, 255, 0.6) 75%, rgba(255, 255, 255, 0.3) 75%, rgba(255, 255, 255, 0.3));
-    background-repeat: repeat;
-    background-size: 40px 40px, 100% 100%;
-    cursor: wait;
-}
-
-@keyframes btn-loading-animation {
-0% {
-    background-position: 0 0;
-}
-100% {
-    background-position: 40px 0;
-}
-}
-</style>
-
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
